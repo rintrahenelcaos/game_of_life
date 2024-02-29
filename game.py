@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui,QtWidgets
-from PyQt5.QtWidgets import QLabel, QMainWindow, QFrame, QPushButton
+from PyQt5.QtWidgets import QLabel, QMainWindow, QFrame, QPushButton, QWidget
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 
 import numpy as np
@@ -11,6 +11,8 @@ GAME_HEIGHT = 900
 CELL_SIZE = 18
 NUMBER_OF_COL = int(GAME_WIDTH/CELL_SIZE)
 NUMBER_OF_ROW = int(GAME_HEIGHT/CELL_SIZE)
+
+grid = [[False for y in range(NUMBER_OF_ROW)] for x in range(NUMBER_OF_COL)]    
 
 class Cell(QLabel):
     def __init__(self, reference_frame, xpos, ypos):
@@ -25,15 +27,25 @@ class Cell(QLabel):
         
         self.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
     
-        self.setMouseTracking(True)    
+        self.setMouseTracking(True)  
         
-    """def mousePress(self, event):
-        super().mousePressEvent(event)
-        statechanged = True"""
+    
+    def pressed(self):
+        print("event") 
         
+    def mousePressEvent(self, QMouseEvent):
+        super(Cell, self).mousePressEvent(QMouseEvent)
+        print("pressed "+self.objectName())  
+        print("column "+self.objectName()[:self.objectName().find(",")])
+        print("row "+self.objectName()[self.objectName().find(",")+1:])
+        grid[int(self.objectName()[:self.objectName().find(",")])][int(self.objectName()[self.objectName().find(",")+1:])] = not grid[int(self.objectName()[:self.objectName().find(",")])][int(self.objectName()[self.objectName().find(",")+1:])]
+        self.alive = not self.alive
+        self.alive_or_not()
+    
     def alive_or_not(self):
         if self.alive: self.setStyleSheet("background-color: white")
         else: self.setStyleSheet("background-color: black")
+   
         
 class Main_window(QMainWindow):
     def __init__(self):
@@ -42,23 +54,48 @@ class Main_window(QMainWindow):
         self.setObjectName("MainWindow")
         self.resize(1000, 900)
         self.setWindowTitle("MainWindow")
-        self.setStyleSheet("QWidget { background-color: #0E0E0E}")
+        #self.setStyleSheet("background-color: #0E0E0E")
+        self.setStyleSheet("background-color: dimgray")
         self.setWindowTitle("Game of life")
         
         self.game_frame = QFrame(self)
         self.game_frame.resize(900,900)
-        self.game_frame.setStyleSheet("background-color: transparent")
+        self.game_frame.setStyleSheet("background-color: black")
         
         self.evolve_button = QPushButton(self)
         self.evolve_button.setShortcut("Space")
         self.evolve_button.setGeometry(QtCore.QRect(905,10,90,50))
-        self.evolve_button.clicked.connect(lambda: self.launch())
-        self.evolve_button.setStyleSheet("background-color: gray")
+        self.evolve_button.released.connect(lambda: self.launch())
+        self.evolve_button.setStyleSheet("background-color: darkgreen")
+        self.evolve_button.setText("Start Simulation")
+        
+        self.clear_button = QPushButton(self)
+        self.clear_button.setText("Clear all cells")
+        self.clear_button.setStyleSheet("background-color: gold")
+        self.clear_button.setGeometry(QtCore.QRect(905,80,90,50))
+        self.clear_button.clicked.connect(lambda: self.cleaner())
+        
+        self.cycle_counter = 0
+        
+        self.cycles = QLabel(self)
+        self.cycles.setText("cycles: "+str(self.cycle_counter))
+        self.cycles.setGeometry(905, 140, 90, 40)
+        self.cycles.setStyleSheet("color: red")
+        
+        
+        
+        
         
         self.timer = QTimer(self)
+        self.timer.setInterval(500)
+        self.timer.timeout.connect(self.life)
+        
         self.cell_creator()
         
         self.cell_assigner()
+        
+        self.isalive = True
+        
         
     def cell_creator(self):
         
@@ -76,35 +113,54 @@ class Main_window(QMainWindow):
     
     def life(self):
         growth(grid)
-        print(grid)
         self.cell_assigner()
+        self.cycle_counter += 1
+        self.cycles.setText("cycles: "+str(self.cycle_counter))
         
-    def launch(self):
-        self.evolve_button.clicked.connect(lambda: self.timer.stop())
+    def launchor(self):
+           
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.life)
         self.timer.start()
         
+    def launch(self):
+           
+        if self.isalive:
+            self.isalive = False
+            print(self.isalive)
+            self.timer.start()
+            self.evolve_button.setText("Stop Simulation")
+            
+        else: 
+            self.isalive = True
+            print(self.isalive)
+            self.timer.stop()
+            self.evolve_button.setText("Start Simulation")
+            
+    def cleaner(self):
+        self.timer.stop()
+        clear()
+        self.cell_assigner()
+    
+    
+ 
+def clear():
+    for col in range(NUMBER_OF_COL):
+        for row in range(NUMBER_OF_ROW):
+            grid[col][row] = False
+          
+        
+        
+        
         
     
     
         
         
-grid = [[False for y in range(NUMBER_OF_ROW)] for x in range(NUMBER_OF_COL)]    # cell position: [row][col]
 
 
-grid[8][3] = True
-grid[8][4] = True
-grid[8][5] = True
-grid[8][6] = True
-grid[8][7] = True
-grid[8][8] = True
-grid[8][9] = True
-grid[9][10] = True
-grid[10][10] = True
-grid[11][10] = True
-grid[12][10] = True
-grid[13][10] = True
+
+
 
 
 
