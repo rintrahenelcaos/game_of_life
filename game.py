@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtGui,QtWidgets
 from PyQt5.QtWidgets import QLabel, QMainWindow, QFrame, QPushButton, QWidget
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 
-import numpy as np
+import functools
 import sys
 
 
@@ -42,9 +42,17 @@ class Cell(QLabel):
         self.alive = not self.alive
         self.alive_or_not()
     
-    def alive_or_not(self):
+    def initial_setup(self):
         if self.alive: self.setStyleSheet("background-color: white")
         else: self.setStyleSheet("background-color: black")
+    
+    def alive_or_not(self):
+        if self.alive: 
+            apply_color_animation(self, QtGui.QColor("black"), QtGui.QColor("white"), duration=500)
+            
+        else: 
+            apply_color_animation(self, QtGui.QColor("white"), QtGui.QColor("black"), duration=500)
+            
    
         
 class Main_window(QMainWindow):
@@ -54,7 +62,6 @@ class Main_window(QMainWindow):
         self.setObjectName("MainWindow")
         self.resize(1000, 900)
         self.setWindowTitle("MainWindow")
-        #self.setStyleSheet("background-color: #0E0E0E")
         self.setStyleSheet("background-color: dimgray")
         self.setWindowTitle("Game of life")
         
@@ -82,17 +89,11 @@ class Main_window(QMainWindow):
         self.cycles.setGeometry(905, 140, 90, 40)
         self.cycles.setStyleSheet("color: red")
         
-        
-        
-        
-        
         self.timer = QTimer(self)
         self.timer.setInterval(500)
         self.timer.timeout.connect(self.life)
         
         self.cell_creator()
-        
-        self.cell_assigner()
         
         self.isalive = True
         
@@ -103,17 +104,18 @@ class Main_window(QMainWindow):
             for y in range(NUMBER_OF_ROW):
                 Cell(self.game_frame, x, y)
     
-    def cell_assigner(self):
+                    
+    def cell_assigner(self, tochange):
         
-        for y in range(NUMBER_OF_ROW):
-            for x in range(NUMBER_OF_COL):
-                one_cell = self.game_frame.findChild(Cell, str(x)+","+str(y))
-                one_cell.alive = grid[x][y]
-                one_cell.alive_or_not()
-    
+        for uniquecell in tochange:
+            one_cell = self.game_frame.findChild(Cell, uniquecell)
+            print(int(uniquecell[:uniquecell.find(",")]))
+            one_cell.alive = grid[int(uniquecell[:uniquecell.find(",")])][int(uniquecell[uniquecell.find(",")+1:])]
+            one_cell.alive_or_not()
+     
     def life(self):
-        growth(grid)
-        self.cell_assigner()
+        changed = growth(grid)
+        self.cell_assigner(changed)
         self.cycle_counter += 1
         self.cycles.setText("cycles: "+str(self.cycle_counter))
         
@@ -130,17 +132,28 @@ class Main_window(QMainWindow):
             print(self.isalive)
             self.timer.start()
             self.evolve_button.setText("Stop Simulation")
+            self.evolve_button.setStyleSheet("background-color: darkred")
             
         else: 
             self.isalive = True
             print(self.isalive)
             self.timer.stop()
             self.evolve_button.setText("Start Simulation")
+            self.evolve_button.setStyleSheet("background-color: darkgreen")
             
     def cleaner(self):
         self.timer.stop()
         clear()
-        self.cell_assigner()
+        for y in range(NUMBER_OF_ROW):
+            for x in range(NUMBER_OF_COL):
+                one_cell = self.game_frame.findChild(Cell, str(x)+","+str(y))
+                one_cell.alive = grid[x][y]
+                one_cell.initial_setup()
+        self.cycle_counter = 0
+        self.cycles.setText("cycles: "+str(self.cycle_counter))
+        self.isalive = True
+        self.evolve_button.setText("Start Simulation")
+        self.evolve_button.setStyleSheet("background-color: darkgreen")
     
     
  
@@ -149,22 +162,6 @@ def clear():
         for row in range(NUMBER_OF_ROW):
             grid[col][row] = False
           
-        
-        
-        
-        
-    
-    
-        
-        
-
-
-
-
-
-
-
-
 
 def neighborhood(posx, posy, habitat):
     alive_neighbor = 0
@@ -194,22 +191,64 @@ def neighborhood(posx, posy, habitat):
     return alive_neighbor
     
 def alive(posx, posy, habitat, habitatoriginal):
+    status_change_indicator = str
     near_cells = neighborhood(posx, posy, habitatoriginal)
     if habitatoriginal[posx][posy]:
-        if near_cells < 2: habitat[posx][posy] = False
-        elif near_cells > 3: habitat[posx][posy] = False
+        if near_cells < 2: 
+            habitat[posx][posy] = False
+            status_change_indicator = str(posx)+","+str(posy)
+        elif near_cells > 3: 
+            habitat[posx][posy] = False
+            status_change_indicator = str(posx)+","+str(posy)
+        else: status_change_indicator = ""    
     else: 
-        if near_cells == 3: habitat[posx][posy] = True
-        
+        if near_cells == 3: 
+            habitat[posx][posy] = True
+            status_change_indicator = str(posx)+","+str(posy)
+        else: status_change_indicator = "" 
+    return status_change_indicator
+
 def growth(habitat):
     previous = habitat.copy()
+    changed_status = []
     for x in range(NUMBER_OF_COL):
         for y in range(NUMBER_OF_ROW):
-            alive(x, y, habitat, previous)
+            changed_status.append(alive(x, y, habitat, previous))
+    changed_set = set(changed_status)
+    changed_set.remove("")
+    print(changed_set)   
+    return changed_set     
             
             
     
-        
+def helper_function(widget, color):
+    """ Allows color change
+
+    Args:
+        widget (Qwidget): Target widget
+        color (str): colour code
+    """
+    widget.setStyleSheet("background-color: {}".format(color.name()))
+    
+def apply_color_animation(widget, start_color, end_color, duration=1000, loops=1):
+    """ Function to indicate what to do via colors
+
+    Args:
+        widget (QWidget): target widget
+        start_color (str): initial color
+        end_color (str): end color, usually original one
+        duration (int, optional): transition duration. Defaults to 1000.
+        loops (int, optional): number of transitions. Defaults to 1.
+    """
+    anim = QtCore.QVariantAnimation(
+        widget,
+        duration=duration,
+        startValue=start_color,
+        endValue=end_color,
+        loopCount=loops,
+    )
+    anim.valueChanged.connect(functools.partial(helper_function, widget))
+    anim.start(QtCore.QAbstractAnimation.DeleteWhenStopped)      
 
         
 
