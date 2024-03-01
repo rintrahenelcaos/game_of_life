@@ -29,15 +29,10 @@ class Cell(QLabel):
     
         self.setMouseTracking(True)  
         
-    
-    def pressed(self):
-        print("event") 
-        
+            
     def mousePressEvent(self, QMouseEvent):
         super(Cell, self).mousePressEvent(QMouseEvent)
-        print("pressed "+self.objectName())  
-        print("column "+self.objectName()[:self.objectName().find(",")])
-        print("row "+self.objectName()[self.objectName().find(",")+1:])
+        
         grid[int(self.objectName()[:self.objectName().find(",")])][int(self.objectName()[self.objectName().find(",")+1:])] = not grid[int(self.objectName()[:self.objectName().find(",")])][int(self.objectName()[self.objectName().find(",")+1:])]
         self.alive = not self.alive
         self.alive_or_not()
@@ -48,10 +43,10 @@ class Cell(QLabel):
     
     def alive_or_not(self):
         if self.alive: 
-            apply_color_animation(self, QtGui.QColor("black"), QtGui.QColor("white"), duration=500)
+            apply_color_animation(self, QtGui.QColor("black"), QtGui.QColor("white"), duration=800)
             
         else: 
-            apply_color_animation(self, QtGui.QColor("white"), QtGui.QColor("black"), duration=500)
+            apply_color_animation(self, QtGui.QColor("white"), QtGui.QColor("black"), duration=800)
             
    
         
@@ -129,14 +124,12 @@ class Main_window(QMainWindow):
            
         if self.isalive:
             self.isalive = False
-            print(self.isalive)
             self.timer.start()
             self.evolve_button.setText("Stop Simulation")
             self.evolve_button.setStyleSheet("background-color: darkred")
             
         else: 
             self.isalive = True
-            print(self.isalive)
             self.timer.stop()
             self.evolve_button.setText("Start Simulation")
             self.evolve_button.setStyleSheet("background-color: darkgreen")
@@ -209,6 +202,7 @@ def alive(posx, posy, habitat, habitatoriginal):
     return status_change_indicator
 
 def growth(habitat):
+    
     previous = habitat.copy()
     changed_status = []
     for x in range(NUMBER_OF_COL):
@@ -216,7 +210,7 @@ def growth(habitat):
             changed_status.append(alive(x, y, habitat, previous))
     changed_set = set(changed_status)
     changed_set.remove("")
-    print(changed_set)   
+    
     return changed_set     
             
             
