@@ -104,7 +104,6 @@ class Main_window(QMainWindow):
         
         for uniquecell in tochange:
             one_cell = self.game_frame.findChild(Cell, uniquecell)
-            print(int(uniquecell[:uniquecell.find(",")]))
             one_cell.alive = grid[int(uniquecell[:uniquecell.find(",")])][int(uniquecell[uniquecell.find(",")+1:])]
             one_cell.alive_or_not()
      
