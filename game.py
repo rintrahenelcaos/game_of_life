@@ -73,10 +73,10 @@ class Cell(QLabel):
         """ Method to change the color form alive to dead
         """
         if self.alive: 
-            apply_color_animation(self, QtGui.QColor("black"), QtGui.QColor("white"), duration=200)
+            apply_color_animation(self, QtGui.QColor("black"), QtGui.QColor("white"), duration=150)
             
         else: 
-            apply_color_animation(self, QtGui.QColor("white"), QtGui.QColor("black"), duration=200)
+            apply_color_animation(self, QtGui.QColor("white"), QtGui.QColor("black"), duration=150)
             
    
         
